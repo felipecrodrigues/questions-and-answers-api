@@ -6,7 +6,7 @@ Backend API for QuestionsAndAnswers.com
 
 You must have the following software previously installed:
 - [Docker](https://www.docker.com)
-- [Node.js](nodejs.org/)
+- [Node.js](https://nodejs.org/)
 
 ## Development environment
 
