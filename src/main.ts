@@ -4,7 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { QuestionModule } from './modules/question.module';
 
 async function bootstrap() {
-    const app = await NestFactory.create(QuestionModule);
+    const app = await NestFactory.create(QuestionModule, { cors: true });
 
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.setGlobalPrefix(process.env.URL_ROUTE_PREFIX);
