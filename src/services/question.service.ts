@@ -38,7 +38,13 @@ export class QuestionService {
             throw new BadRequestException(question.Question, "Question must have a description.")
         } 
 
+        const validTextRegex = /\w+\s+\w+/;
+        if (!validTextRegex.test(question.Question)) {
+            throw new BadRequestException(question.Question, "Question must have at least two words.")
+        }
+
         try{
+            //TypeORM uses parameters when generating queries, so we don't have to worry about SQL Injection.
             return await this.questionRepository.save(question);
         } catch(error) {
             this.logger.error(`Error saving question ${question.Id}: Error message: ${error}`);

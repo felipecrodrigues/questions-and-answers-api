@@ -14,6 +14,20 @@ function mockQuestionResponse(id: number) {
   return question;
 }
 
+function mockSqlInjectionQuestion() {
+  const question = new Question();
+  question.Question = 'test\', null); delete from "question";';
+  return question;
+}
+
+function mockSqlInjectionAnswer(id: number) {
+  const question = new Question();
+  question.Id = id;
+  question.Question = faker.lorem.sentence();
+  question.Question = 'test\', null); delete from "question";';
+  return question;
+}
+
 describe('QuestionService', () => {
   let questionService: QuestionService;
   let questionRepository: Repository<Question>;
@@ -50,6 +64,12 @@ describe('QuestionService', () => {
       const questions = await questionService.getQuestions();
       expect(questions.length).toBeGreaterThan(0);
     });
+    
+    it('should return null when there is a repository error', async () => {      
+      jest.spyOn(questionRepository, 'find').mockImplementation(() => { throw new Error() });
+      const questions = await questionService.getQuestions();
+      expect(questions).toBeNull();
+    });
 
   });
 
@@ -68,6 +88,13 @@ describe('QuestionService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(BadRequestException);
       }
+    });
+    
+    it('should return null when there is a repository error', async () => {   
+      const id = faker.random.number();
+      jest.spyOn(questionRepository, 'findOne').mockImplementation(() => { throw new Error() });
+      const questions = await questionService.getQuestionById(id);
+      expect(questions).toBeNull();
     });
 
   });
@@ -101,6 +128,44 @@ describe('QuestionService', () => {
         expect(error).toBeInstanceOf(BadRequestException);
         expect(questionRepository.save).toHaveBeenCalledTimes(0);
       }
+    });
+
+    it('should throw an error if there is only one word', async () => {
+      const question = new Question();
+      question.Question = faker.lorem.word();
+      try {
+        await questionService.saveQuestion(question);
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(questionRepository.save).toHaveBeenCalledTimes(0);
+      }
+    });
+
+    it('should save the question disregarding of SQL Injection attempts', async () => {
+      const question = mockSqlInjectionQuestion();
+      const newQuestion = await questionService.saveQuestion(question);
+      
+      expect(newQuestion.Id).toBeGreaterThan(0);
+      expect(newQuestion.Question).toBe(question.Question);
+      expect(questionRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should save the question disregarding of SQL Injection attempts', async () => {
+      const id = faker.random.number();
+      const question = mockSqlInjectionAnswer(id);
+      const newQuestion = await questionService.saveQuestion(question);
+      
+      expect(question.Id).toBe(newQuestion.Id);
+      expect(newQuestion.Question).toBe(question.Question);
+      expect(newQuestion.Answer).toBe(question.Answer);
+      expect(questionRepository.save).toHaveBeenCalledTimes(1);
+    });
+    
+    it('should return null when there is a repository error', async () => {   
+      const question = mockQuestionResponse(null);
+      jest.spyOn(questionRepository, 'save').mockImplementation(() => { throw new Error() });
+      const newQuestion = await questionService.saveQuestion(question);
+      expect(newQuestion).toBeNull();
     });
 
   });
